@@ -88,7 +88,7 @@ def checkconnection(G,M):
 
 def reduce_graph(G, M, draw = True):
     ''' G will be reduced to M-node,data server only, graph '''
-    G = nx.minimum_spanning_tree(G) 
+    G = nx.minimum_spanning_tree(G) #Bujar's comment code after MST or current reduction
     pos = nx.get_node_attributes(G, 'pos')
     ctr = find_center_node(G)[0]
     G.nodes[ctr]['wrk'] = 'd-ctr'
