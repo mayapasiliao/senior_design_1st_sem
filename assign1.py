@@ -81,6 +81,8 @@ def reduce_graph(G, M, N, draw = True):
     for node in all_nodes_list:
         if node[1] == 's':
             all_data_nodes.append(node)
+    # Since we already computed ctr (yellow) above, we can add that to the list
+    all_data_nodes.append((ctr, 'd-ctr'))
     all_data_nodes_length = len(all_data_nodes)
 
     # NOTE, we might be able to use just this: multi_source_dijkstra_path(G, sources) Find shortest weighted paths in G from a given set of source nodes.
