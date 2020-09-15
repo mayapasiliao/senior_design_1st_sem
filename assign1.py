@@ -118,24 +118,30 @@ def reduce_graph(G, M, N, draw = True):
             for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
                 new_graph_2.add_edge(path_of_nodes[i], path_of_nodes[i+1])
 
-    # #nodes_in_new_graph.sort()
-    # # ### NOTE, this changes the type to a list
-    # # nodes_in_new_graph = sorted(nodes_in_new_graph)
-    # print(nodes_in_new_graph)
-    # for i in range (0, N):
-    #     if i not in nodes_in_new_graph:
-    #         new_graph.add_node(i, wrk=G.nodes[i]['wrk'])
-    
-    # # After adding the nodes, we must add the edges. 
-    # for path_of_nodes in all_shortest_paths:
-    #     if len(path_of_nodes) > 1: #ie only save pathed nodes, cause we have list of just single red.
-    #         for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
-    #             new_graph.add_edge(path_of_nodes[i], path_of_nodes[i+1])
-
-    # # We are still mising the white nodes not in the path, and thus need to figure out which those are and add them. 
-    # G=new_graph
    
     G = new_graph_2
+
+    weighted_edge_M_pairs = list()
+    for shortest_path_i in all_shortest_paths:
+        if len(shortest_path_i) > 1:
+            i = 1
+            red_found = False
+            while not red_found:
+                if G.nodes[shortest_path_i[i]]['wrk'] == 's' or G.nodes[shortest_path_i[i]]['wrk'] == 'd-ctr':
+                    red_found = True
+                    # print(i)
+                    # print(shortest_path_i[i])
+                else:
+                    i += 1
+            weighted_edge_M_pairs.append((shortest_path_i[0], shortest_path_i[i], i))
+     
+    print(weighted_edge_M_pairs)
+
+    m_node_graph = nx.create_empty_copy(G)
+    for weighted_edge_M_pair in weighted_edge_M_pairs:
+        m_node_graph.add_edge(weighted_edge_M_pair[0], weighted_edge_M_pair[1], weight=weighted_edge_M_pair[2])
+    
+    
 
     if draw:  # draw an original graph with a network center
         plt1 = plt.figure(figsize=(15, 15))
@@ -148,6 +154,17 @@ def reduce_graph(G, M, N, draw = True):
         for n in range(G.order()): labels[n] = str(n)
         nx.draw_networkx_labels(G, pos, labels, font_size = 10)
 
+        plt2 = plt.figure(figsize=(15, 15))
+        colors = set_node_colors(m_node_graph)
+        nx.draw_networkx_nodes(m_node_graph, pos, node_size = 160,
+                               node_color = colors, edgecolors = 'gray',
+                               cmap = plt.cm.Reds_r)
+        labels = nx.get_edge_attributes(m_node_graph,'weight')
+        # nx.draw_networkx_edge_labels(m_node_graph,pos,edge_labels=labels)
+        nx.draw_networkx_edges(m_node_graph,pos)
+        labels = {}
+        for n in range(m_node_graph.order()): labels[n] = str(n)
+        nx.draw_networkx_labels(m_node_graph, pos, labels, font_size = 10)
     
     if draw:
         plt.xlim(-0.05, 1.05)
@@ -158,9 +175,9 @@ def reduce_graph(G, M, N, draw = True):
 
 
 
-def reduce_all_ones(G):
-    non_red_nodes = list(G.nodes.data('wrk'))
-    print(non_red_nodes)
+# def reduce_all_ones(G):
+#     non_red_nodes = list(G.nodes.data('wrk'))
+#     print(non_red_nodes)
 
 def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
