@@ -86,6 +86,38 @@ def checkconnection(G,M):
     else:
         return True
 
+def furthestfromMnodes(G,M):
+    '''Gets the node furthest from all M nodes, returns an integer'''
+    nodedict = {}
+    for x in range(M, len(G)):
+        sum = 0
+        for y in range(0,M):
+            sum +=nx.shortest_path_length(G,x,y)
+        nodedict[x] = sum
+    highest = M
+    for x in range(M, len(G)):
+        if nodedict[x]>nodedict[highest]:
+            highest = x
+    return highest
+
+def distancefromMnodes(G,M,x):
+    '''Returns a dictionary of node distances from node x, pair with the above to get furthest node distances'''
+    nodedict = {}
+    for y in range(0,M):
+        nodedict[y]=nx.shortest_path_length(G,x,y)
+    return nodedict
+
+def randomMtoMdistance(G,M):
+    '''Returns a dictionary of node distances from a randomly chosen M node to all other M nodes'''
+    sourcenode = rnd.randrange(0,M)
+    print(sourcenode)
+    nodedict = {}
+    for y in range(0,M):
+        if y != sourcenode:
+            nodedict[y]=nx.shortest_path_length(G,sourcenode,y)
+    print(nodedict)
+    return nodedict
+
 def reduce_graph(G, M, draw = True):
     ''' G will be reduced to M-node,data server only, graph '''
     G = nx.minimum_spanning_tree(G) 
