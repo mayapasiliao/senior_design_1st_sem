@@ -60,7 +60,7 @@ def set_node_colors(G):
     for i in range(G.order()):
         role = G.nodes[i]['wrk']
         if   role == 'd': colors.append('white')         # no data node
-        elif role == 'd-ctr': colors.append('yellow')    # graph center 
+        elif role == 'd-ctr': colors.append('yellow')    # graph center
         elif role == 's': colors.append('red')           # data node
         elif role == 's-ctr': colors.append('skyblue')   # subgraph center
         elif role == 'r-ctr': colors.append('blue')      # reduced graph center
@@ -75,9 +75,12 @@ def reduce_graph(G, M, N, draw = True):
     G.nodes[ctr]['wrk'] = 'd-ctr'
 
     # realize a logic to reduce the network based on find MST
-    G = nx.minimum_spanning_tree(G) 
+    G = nx.minimum_spanning_tree(G)
+    mst_ctr = find_center_node(G)[0]
+    G.nodes[mst_ctr]['wrk'] = 'r-ctr'
+
     all_nodes_list = list(G.nodes.data('wrk'))
-    all_data_nodes = list() # Get all the red nodes. 
+    all_data_nodes = list() # Get all the red nodes.
     for node in all_nodes_list:
         if node[1] == 's':
             all_data_nodes.append(node)
@@ -86,10 +89,10 @@ def reduce_graph(G, M, N, draw = True):
     all_data_nodes_length = len(all_data_nodes)
 
     # NOTE, we might be able to use just this: multi_source_dijkstra_path(G, sources) Find shortest weighted paths in G from a given set of source nodes.
-    # NOTE this might not work because its returning to all nodes. WE only care about red nodes. 
+    # NOTE this might not work because its returning to all nodes. WE only care about red nodes.
     # all_shortest_paths = multi_source_dijkstra_path_length
 
-    # Out of all the methods, dijsktra's path seems to be the one of most fit. 
+    # Out of all the methods, dijsktra's path seems to be the one of most fit.
 
     #Once we connect i to j, we don't need to connect j to i (Its already there)
     all_shortest_paths = list()
@@ -108,11 +111,11 @@ def reduce_graph(G, M, N, draw = True):
             # print(node)
             # print(G.nodes[node]['wrk'])
 
-    #Generate all edge pairs between red + shortest paths. 
+    #Generate all edge pairs between red + shortest paths.
     # remove all edge pairs from current graph
         # we can create a copy: nx.create_empty_copy(G, with_data=True)
     new_graph_2 = nx.create_empty_copy(G)
-    # add in "new" edge pairs. 
+    # add in "new" edge pairs.
     for path_of_nodes in all_shortest_paths:
         if len(path_of_nodes) > 1: #ie only save pathed nodes, cause we have list of just single red.
             for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
@@ -125,16 +128,16 @@ def reduce_graph(G, M, N, draw = True):
     # for i in range (0, N):
     #     if i not in nodes_in_new_graph:
     #         new_graph.add_node(i, wrk=G.nodes[i]['wrk'])
-    
-    # # After adding the nodes, we must add the edges. 
+
+    # # After adding the nodes, we must add the edges.
     # for path_of_nodes in all_shortest_paths:
     #     if len(path_of_nodes) > 1: #ie only save pathed nodes, cause we have list of just single red.
     #         for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
     #             new_graph.add_edge(path_of_nodes[i], path_of_nodes[i+1])
 
-    # # We are still mising the white nodes not in the path, and thus need to figure out which those are and add them. 
+    # # We are still mising the white nodes not in the path, and thus need to figure out which those are and add them.
     # G=new_graph
-   
+
     G = new_graph_2
 
     if draw:  # draw an original graph with a network center
@@ -148,13 +151,13 @@ def reduce_graph(G, M, N, draw = True):
         for n in range(G.order()): labels[n] = str(n)
         nx.draw_networkx_labels(G, pos, labels, font_size = 10)
 
-    
+
     if draw:
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
         # plt.axis('off')
         plt.show(block = False)
-    return G 
+    return G
 
 
 
@@ -164,10 +167,10 @@ def reduce_all_ones(G):
 
 def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
-    parameter, a uniform [d_max, d_min] is a generated data size to exchange, 
-    d_M is the number of data generating servres, round_per_graph is the 
-    number of iterations per a generated graph, and drwa is to decide if the 
-    graph is gerated or not. ''' 
+    parameter, a uniform [d_max, d_min] is a generated data size to exchange,
+    d_M is the number of data generating servres, round_per_graph is the
+    number of iterations per a generated graph, and drwa is to decide if the
+    graph is gerated or not. '''
     print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
           "data =[" + str(d_min) + " ," + str(d_max) + "]",
           "Data Senders =", d_M, "Per Graph =", round_per_graph)
