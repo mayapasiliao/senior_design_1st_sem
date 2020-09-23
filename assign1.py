@@ -106,7 +106,7 @@ def reduce_graph(G, M, N, draw = True):
     for path_of_nodes in all_shortest_paths:
         for node in path_of_nodes:
             # NOTE -- might not need this code anymore, but keeping her just cause.
-            new_graph.add_node(node, wrk=G.nodes[node]['wrk'])
+            new_graph.add_node(node, wrk=G.nodes[node]['wrk']) #DO we add this node?
             nodes_in_new_graph.add(node)
             # print(node)
             # print(G.nodes[node]['wrk'])
