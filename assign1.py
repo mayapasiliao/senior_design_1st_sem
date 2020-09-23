@@ -166,6 +166,9 @@ def reduce_graph(G, M, N, draw = True):
                                node_color = colors, edgecolors = 'gray',
                                cmap = plt.cm.Reds_r)
         labels = nx.get_edge_attributes(m_node_graph,'weight')
+        # formatted_labels = {}
+        # for label in labels:
+        #     formatted_labels[label]=  "weight: "+str(label[1])
         nx.draw_networkx_edge_labels(m_node_graph,pos,edge_labels=labels)
         nx.draw_networkx_edges(m_node_graph,pos)
         labels = {}
