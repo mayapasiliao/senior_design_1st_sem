@@ -106,6 +106,7 @@ def reduce_graph(G, M, N, draw = True):
     for path_of_nodes in all_shortest_paths:
         for node in path_of_nodes:
             # NOTE -- might not need this code anymore, but keeping her just cause.
+            # Insert code for any other centers added.
             new_graph.add_node(node, wrk=G.nodes[node]['wrk'])
             nodes_in_new_graph.add(node)
             # print(node)
@@ -130,6 +131,7 @@ def reduce_graph(G, M, N, draw = True):
             i = 1
             red_found = False
             while not red_found:
+                ## Insert logic for any center nodes added.  
                 if G.nodes[shortest_path_i[i]]['wrk'] == 's' or G.nodes[shortest_path_i[i]]['wrk'] == 'd-ctr':
                     red_found = True
                     # print(i)
@@ -140,6 +142,7 @@ def reduce_graph(G, M, N, draw = True):
      
     print(weighted_edge_M_pairs)
 
+    # New graph with M connected nodes only, as well as weights added in.
     m_node_graph = nx.create_empty_copy(G)
     for weighted_edge_M_pair in weighted_edge_M_pairs:
         m_node_graph.add_edge(weighted_edge_M_pair[0], weighted_edge_M_pair[1], weight=weighted_edge_M_pair[2])
@@ -163,7 +166,7 @@ def reduce_graph(G, M, N, draw = True):
                                node_color = colors, edgecolors = 'gray',
                                cmap = plt.cm.Reds_r)
         labels = nx.get_edge_attributes(m_node_graph,'weight')
-        # nx.draw_networkx_edge_labels(m_node_graph,pos,edge_labels=labels)
+        nx.draw_networkx_edge_labels(m_node_graph,pos,edge_labels=labels)
         nx.draw_networkx_edges(m_node_graph,pos)
         labels = {}
         for n in range(m_node_graph.order()): labels[n] = str(n)
