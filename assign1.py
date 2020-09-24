@@ -212,6 +212,7 @@ def reduce_graph(G, M, N, draw = True):
     return G
 
 def testremoval(G,M,X,Y):
+    '''Tests to see if M nodes are reachable by node 0 after removing an edge.'''
     G.remove_edge(X,Y)
     print(str(X)+" "+str(Y) + "removed")
     print("reachable by 0: "+str(nx.algorithms.dag.descendants(G,0)))
@@ -223,6 +224,7 @@ def testremoval(G,M,X,Y):
         return True
 
 def checkconnection(G,M):
+    '''Checks if M nodes are reachable by node 0.'''
     print("reachable by 0: "+str(nx.algorithms.dag.descendants(G,0)))
     container = list(nx.algorithms.dag.descendants(G,0))
     for x in range(1, M):
@@ -232,6 +234,7 @@ def checkconnection(G,M):
         return True
 
 def furthestfromMnodes(G,M,arr):
+    '''Returns the sum of distances between the node furthest from all M nodes and the M nodes themselves.'''
     nodedict = {}
     for x in range(M, len(G)):
         sum = 0
@@ -245,12 +248,14 @@ def furthestfromMnodes(G,M,arr):
     return highest
 
 def distancefromnodes(G,x,arr):
+    '''Returns the sum of distances between node x and all nodes in the array arr.'''
     distance = 0
     for y in arr:
         distance+=nx.shortest_path_length(G,x,y)
     return distance
 
 def randomMtoMdistance(G,M,arr):
+    '''Returns the sum of distances between a randomly selected M node and all other M nodes.'''
     sourcenode = rnd.randrange(0,M)
     distance = 0
     for y in arr:
@@ -259,6 +264,8 @@ def randomMtoMdistance(G,M,arr):
     return distance
 
 def closestMtoMdistance(G,M,arr):
+    '''Returns the sum of distances between the closest M node to all other M nodes
+    and all other M nodes.'''
     nodedict = {}
     for x in range(0,M):
         sum = 0
@@ -279,7 +286,7 @@ def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
     parameter, a uniform [d_max, d_min] is a generated data size to exchange,
     d_M is the number of data generating servres, round_per_graph is the
-    number of iterations per a generated graph, and drwa is to decide if the
+    number of iterations per a generated graph, and draw is to decide if the
     graph is gerated or not. '''
     print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
           "data =[" + str(d_min) + " ," + str(d_max) + "]",
@@ -293,8 +300,10 @@ def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
     parameter, a uniform [d_max, d_min] is a generated data size to exchange, 
     d_M is the number of data generating servres, round_per_graph is the 
-    number of iterations per a generated graph, and drwa is to decide if the 
-    graph is gerated or not. ''' 
+    number of iterations per a generated graph, and draw is to decide if the 
+    graph is gerated or not. This is a variation of the above simulation meant 
+    to analyze the graph created. Four analysis functions are used 10 times to gain
+    the correct answer to the experimental set.''' 
     print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
           "data =[" + str(d_min) + " ," + str(d_max) + "]",
           "Data Senders =", d_M, "Per Graph =", round_per_graph)
@@ -313,6 +322,8 @@ def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
     return answerlist
         
 def assignment():
+    '''Runs the above iteration code 10 x 10 x 4 times of different variations. Answers returned are added to an array,
+    which is then written to a csv as the answer.'''
     answerlist = [[0 for col in range(10)] for row in range(40)]
     for x in range(0,10):
         M = rnd.randrange(1,11)*10
