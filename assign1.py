@@ -76,8 +76,6 @@ def reduce_graph(G, M, N, draw = True):
 
     # realize a logic to reduce the network based on find MST
     G = nx.minimum_spanning_tree(G)
-    mst_ctr = find_center_node(G)[0]
-    G.nodes[mst_ctr]['wrk'] = 'r-ctr'
 
     all_nodes_list = list(G.nodes.data('wrk'))
     all_data_nodes = list() # Get all the red nodes.
@@ -122,7 +120,36 @@ def reduce_graph(G, M, N, draw = True):
             for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
                 new_graph_2.add_edge(path_of_nodes[i], path_of_nodes[i+1])
 
-   
+    # Get center of reduced graph
+    temp_graph = new_graph_2.copy()
+    temp_nodes = list(temp_graph.nodes)
+
+    # If node is not connected to any other node, remove it from graph
+    # Need to do this to be able to use find_center_node
+    for node in temp_nodes:
+        if temp_graph.degree[node] == 0:
+            temp_graph.remove_node(node)
+
+    mst_ctr = find_center_node(temp_graph)[0]
+    new_graph_2.nodes[mst_ctr]['wrk'] = 'r-ctr'
+
+    # #nodes_in_new_graph.sort()
+    # # ### NOTE, this changes the type to a list
+    # # nodes_in_new_graph = sorted(nodes_in_new_graph)
+    # print(nodes_in_new_graph)
+    # for i in range (0, N):
+    #     if i not in nodes_in_new_graph:
+    #         new_graph.add_node(i, wrk=G.nodes[i]['wrk'])
+
+    # # After adding the nodes, we must add the edges.
+    # for path_of_nodes in all_shortest_paths:
+    #     if len(path_of_nodes) > 1: #ie only save pathed nodes, cause we have list of just single red.
+    #         for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
+    #             new_graph.add_edge(path_of_nodes[i], path_of_nodes[i+1])
+
+    # # We are still mising the white nodes not in the path, and thus need to figure out which those are and add them.
+    # G=new_graph
+
     G = new_graph_2
 
     weighted_edge_M_pairs = list()
@@ -132,7 +159,7 @@ def reduce_graph(G, M, N, draw = True):
             red_found = False
             while not red_found:
                 ## Insert logic for any center nodes added.  
-                if G.nodes[shortest_path_i[i]]['wrk'] == 's' or G.nodes[shortest_path_i[i]]['wrk'] == 'd-ctr':
+                if G.nodes[shortest_path_i[i]]['wrk'] == 's' or G.nodes[shortest_path_i[i]]['wrk'] == 'd-ctr' or G.nodes[shortest_path_i[i]]['wrk'] == 'r-ctr':
                     red_found = True
                     # print(i)
                     # print(shortest_path_i[i])
@@ -184,7 +211,65 @@ def reduce_graph(G, M, N, draw = True):
         plt.show(block = False)
     return G
 
+def testremoval(G,M,X,Y):
+    G.remove_edge(X,Y)
+    print(str(X)+" "+str(Y) + "removed")
+    print("reachable by 0: "+str(nx.algorithms.dag.descendants(G,0)))
+    container = list(nx.algorithms.dag.descendants(G,0))
+    for x in range(1, M):
+        if not x in container:
+            return False
+    else:
+        return True
 
+def checkconnection(G,M):
+    print("reachable by 0: "+str(nx.algorithms.dag.descendants(G,0)))
+    container = list(nx.algorithms.dag.descendants(G,0))
+    for x in range(1, M):
+        if not x in container:
+            return False
+    else:
+        return True
+
+def furthestfromMnodes(G,M,arr):
+    nodedict = {}
+    for x in range(M, len(G)):
+        sum = 0
+        for y in arr:
+            sum +=nx.shortest_path_length(G,x,y)
+        nodedict[x] = sum
+    highest = M
+    for x in range(M, len(G)):
+        if nodedict[x]>nodedict[highest]:
+            highest = x
+    return highest
+
+def distancefromnodes(G,x,arr):
+    distance = 0
+    for y in arr:
+        distance+=nx.shortest_path_length(G,x,y)
+    return distance
+
+def randomMtoMdistance(G,M,arr):
+    sourcenode = rnd.randrange(0,M)
+    distance = 0
+    for y in arr:
+        if y != sourcenode:
+            distance+=nx.shortest_path_length(G,sourcenode,y)
+    return distance
+
+def closestMtoMdistance(G,M,arr):
+    nodedict = {}
+    for x in range(0,M):
+        sum = 0
+        for y in arr:
+            sum +=nx.shortest_path_length(G,x,y)
+        nodedict[x] = sum
+    lowest = 0
+    for x in range(0,M):
+        if nodedict[x]<nodedict[lowest]:
+            lowest = x
+    return distancefromnodes(G,lowest,arr)
 
 # def reduce_all_ones(G):
 #     non_red_nodes = list(G.nodes.data('wrk'))
@@ -204,6 +289,51 @@ def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     G = reduce_graph(G, M, N, draw) ##NOTE added N parameter to help simplify adding missing white nodes.
     # rest is your work...
 
+def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
+    ''' N is a total number of node, M is a server node, D is a RGG's distance
+    parameter, a uniform [d_max, d_min] is a generated data size to exchange, 
+    d_M is the number of data generating servres, round_per_graph is the 
+    number of iterations per a generated graph, and drwa is to decide if the 
+    graph is gerated or not. ''' 
+    print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
+          "data =[" + str(d_min) + " ," + str(d_max) + "]",
+          "Data Senders =", d_M, "Per Graph =", round_per_graph)
+    answerlist = [[0 for i in range(6)] for j in range(10)]
+    G = generate_graph(N, M, D)
+    G = reduce_graph(G, M, False)
+    for i in range(10):
+        arr = list(range(M))
+        arr = rnd.sample(arr,int(d_M))
+        answerlist[i][5] = N
+        answerlist[i][4] = M
+        answerlist[i][0] = distancefromnodes(G,furthestfromMnodes(G,M,arr),arr)
+        answerlist[i][1] = randomMtoMdistance(G,M,arr)
+        answerlist[i][2] = distancefromnodes(G,find_center_node(G)[0],arr)
+        answerlist[i][3] = closestMtoMdistance(G,M,arr)
+    return answerlist
+        
+def assignment():
+    answerlist = [[0 for col in range(10)] for row in range(40)]
+    for x in range(0,10):
+        M = rnd.randrange(1,11)*10
+        answerlist[x]=iteration(200, M, 0.125, 10, 100, M, 10)
+    for x in range(10,20):
+        M = rnd.randrange(1,11)*10
+        answerlist[x]=iteration(200, M, 0.125, 10, 100, M/2, 10)
+    for x in range(20,30):
+        M = rnd.randrange(1,6)*50
+        answerlist[x]=iteration(500, M, 0.125, 10, 100, M/4, 10)
+    for x in range(30,40):
+        M = rnd.randrange(1,6)*40
+        answerlist[x]=iteration(400, M, 0.125, 10, 100, M, 10)
+    with open('answerfile.csv', mode='w') as answer_file:
+        answerwriter = csv.writer(answer_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for j in range(len(answerlist)):
+            for k in range(len(answerlist[j])):
+                answerwriter.writerow(answerlist[j][k])
+
+
+    
 simulation(200, 20, 0.125, 10, 100, 10, 10, True)
 plt.show()
 
