@@ -76,8 +76,6 @@ def reduce_graph(G, M, N, draw = True):
 
     # realize a logic to reduce the network based on find MST
     G = nx.minimum_spanning_tree(G)
-    mst_ctr = find_center_node(G)[0]
-    G.nodes[mst_ctr]['wrk'] = 'r-ctr'
 
     all_nodes_list = list(G.nodes.data('wrk'))
     all_data_nodes = list() # Get all the red nodes.
@@ -120,6 +118,19 @@ def reduce_graph(G, M, N, draw = True):
         if len(path_of_nodes) > 1: #ie only save pathed nodes, cause we have list of just single red.
             for i in range (0, len(path_of_nodes)-1): #Notice we stop one before because we are connecting i to i+1
                 new_graph_2.add_edge(path_of_nodes[i], path_of_nodes[i+1])
+
+    # Get center of reduced graph
+    temp_graph = new_graph_2.copy()
+    temp_nodes = list(temp_graph.nodes)
+
+    # If node is not connected to any other node, remove it from graph
+    # Need to do this to be able to use find_center_node
+    for node in temp_nodes:
+        if temp_graph.degree[node] == 0:
+            temp_graph.remove_node(node)
+
+    mst_ctr = find_center_node(temp_graph)[0]
+    new_graph_2.nodes[mst_ctr]['wrk'] = 'r-ctr'
 
     # #nodes_in_new_graph.sort()
     # # ### NOTE, this changes the type to a list
