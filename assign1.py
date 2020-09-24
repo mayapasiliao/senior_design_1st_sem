@@ -146,6 +146,8 @@ def reduce_graph(G, M, N, draw = True):
     m_node_graph = nx.create_empty_copy(G)
     for weighted_edge_M_pair in weighted_edge_M_pairs:
         m_node_graph.add_edge(weighted_edge_M_pair[0], weighted_edge_M_pair[1], weight=weighted_edge_M_pair[2])
+    # 
+    m_node_graph = nx.minimum_spanning_tree(m_node_graph)
     
     
 
