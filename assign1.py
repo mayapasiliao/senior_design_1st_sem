@@ -77,6 +77,8 @@ def reduce_graph(G, M, N, draw = True):
 
     # realize a logic to reduce the network based on find MST
     G = nx.minimum_spanning_tree(G)
+    mst_ctr = find_center_node(G)[0]
+    G.nodes[mst_ctr]['wrk'] = 's-ctr'
 
     all_nodes_list = list(G.nodes.data('wrk'))
     all_data_nodes = list() # Get all the red nodes.
@@ -131,8 +133,8 @@ def reduce_graph(G, M, N, draw = True):
         if temp_graph.degree[node] == 0:
             temp_graph.remove_node(node)
 
-    mst_ctr = find_center_node(temp_graph)[0]
-    new_graph_2.nodes[mst_ctr]['wrk'] = 'r-ctr'
+    reduced_mst_ctr = find_center_node(temp_graph)[0]
+    new_graph_2.nodes[reduced_mst_ctr]['wrk'] = 'r-ctr'
 
     # #nodes_in_new_graph.sort()
     # # ### NOTE, this changes the type to a list
@@ -159,7 +161,7 @@ def reduce_graph(G, M, N, draw = True):
             i = 1
             red_found = False
             while not red_found:
-                ## Insert logic for any center nodes added.  
+                ## Insert logic for any center nodes added.
                 if G.nodes[shortest_path_i[i]]['wrk'] == 's' or G.nodes[shortest_path_i[i]]['wrk'] == 'd-ctr' or G.nodes[shortest_path_i[i]]['wrk'] == 'r-ctr':
                     red_found = True
                     # print(i)
@@ -167,17 +169,17 @@ def reduce_graph(G, M, N, draw = True):
                 else:
                     i += 1
             weighted_edge_M_pairs.append((shortest_path_i[0], shortest_path_i[i], i))
-     
+
     print(weighted_edge_M_pairs)
 
     # New graph with M connected nodes only, as well as weights added in.
     m_node_graph = nx.create_empty_copy(G)
     for weighted_edge_M_pair in weighted_edge_M_pairs:
         m_node_graph.add_edge(weighted_edge_M_pair[0], weighted_edge_M_pair[1], weight=weighted_edge_M_pair[2])
-    # 
+    #
     m_node_graph = nx.minimum_spanning_tree(m_node_graph)
-    
-    
+
+
 
     if draw:  # draw an original graph with a network center
         plt1 = plt.figure(figsize=(15, 15))
@@ -204,7 +206,7 @@ def reduce_graph(G, M, N, draw = True):
         labels = {}
         for n in range(m_node_graph.order()): labels[n] = str(n)
         nx.draw_networkx_labels(m_node_graph, pos, labels, font_size = 10)
-    
+
     if draw:
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
@@ -299,12 +301,12 @@ def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
 
 def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
-    parameter, a uniform [d_max, d_min] is a generated data size to exchange, 
-    d_M is the number of data generating servres, round_per_graph is the 
-    number of iterations per a generated graph, and draw is to decide if the 
-    graph is gerated or not. This is a variation of the above simulation meant 
+    parameter, a uniform [d_max, d_min] is a generated data size to exchange,
+    d_M is the number of data generating servres, round_per_graph is the
+    number of iterations per a generated graph, and draw is to decide if the
+    graph is gerated or not. This is a variation of the above simulation meant
     to analyze the graph created. Four analysis functions are used 10 times to gain
-    the correct answer to the experimental set.''' 
+    the correct answer to the experimental set.'''
     print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
           "data =[" + str(d_min) + " ," + str(d_max) + "]",
           "Data Senders =", d_M, "Per Graph =", round_per_graph)
@@ -321,7 +323,7 @@ def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
         answerlist[i][2] = distancefromnodes(G,find_center_node(G)[0],arr)
         answerlist[i][3] = closestMtoMdistance(G,M,arr)
     return answerlist
-        
+
 def assignment():
     '''Runs the above iteration code 10 x 10 x 4 times of different variations. Answers returned are added to an array,
     which is then written to a csv as the answer.'''
@@ -345,7 +347,7 @@ def assignment():
                 answerwriter.writerow(answerlist[j][k])
 
 
-    
+
 simulation(200, 20, 0.125, 10, 100, 10, 10, True)
 plt.show()
 
