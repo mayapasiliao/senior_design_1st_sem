@@ -2,6 +2,7 @@
 import random as rnd
 import matplotlib.pyplot as plt
 import networkx as nx
+import csv
 
 def merge_disconnected_components(G):
     ''' If G has separated connected components, they must be merged to avoid
