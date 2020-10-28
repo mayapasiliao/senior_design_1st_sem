@@ -2,3 +2,4 @@
 2. Fulton Street Mall businesses (128 R, 16 C) - https://data.cityofnewyork.us/Business/Fulton-Street-Mall-businesses/jvce-szsb
 3. Legally Operating Businesses (266,000 R, 27 C) - https://data.cityofnewyork.us/Business/Legally-Operating-Businesses/w7w3-xahh
 4. Daily Weather Reports (16,744 R, 14 C) - https://corgis-edu.github.io/corgis/csv/weather/
+5. Patient satisfaction with Hospitals (110 R, 4 C) - https://data.cityofnewyork.us/Health/health-csv/59rv-zvix
