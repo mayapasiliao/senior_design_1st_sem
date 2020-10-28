@@ -1,1 +1,2 @@
 1. BIC Issued Violations (6,732 R, 31 C) - https://data.cityofnewyork.us/Business/BIC-Issued-Violations/upii-frjc
+2. Fulton Street Mall businesses (128 R, 16 C) - https://data.cityofnewyork.us/Business/Fulton-Street-Mall-businesses/jvce-szsb
