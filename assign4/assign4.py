@@ -99,16 +99,42 @@ def checkconnection(G,M):
     else:
         return True
 
+# Note in this assignment M only holds the number, however we must loop through all since the nodes are randomized.
 def reduce_graph(G, M, draw = True):
     ''' G will be reduced to M-node,data server only, graph '''
     
 
     pos = nx.get_node_attributes(G, 'pos')
+    empty_copy = nx.create_empty_copy(G)
+    # print(empty_copy.nodes(data=True))
+    G = empty_copy
 
+    # Go through the nodes and save only the M nodes. 
+    m_nodes = {}
     
+    # Adding an integer as a key as easier to iterate when computing hamming distance
+    index = 0
+    for node in G.nodes(data=True):
+        if node[1]['wrk'] == 's':
+            m_nodes[index]=node
+            index+=1
+    print(m_nodes)
 
     # ctr = find_center_node(G)[0]
     # G.nodes[ctr]['wrk'] = 'd-ctr'
+
+    for i in range(len(m_nodes)):
+        # NOTE this for loop should be simplified to i > j 
+        for j in range(i+1, len(m_nodes)): 
+            count_bit_difference = 0 #NOTE Should ALWAYS be at least 1. 
+            # can covert this to its own function
+            for bit_position in range(8):
+                #print(m_nodes[i][0][bit_position])
+                #print(m_nodes[j][0][bit_position])
+                if m_nodes[i][0][bit_position] != m_nodes[j][0][bit_position]:
+                   count_bit_difference += 1
+            
+            G.add_edge(m_nodes[i][0], m_nodes[j][0], weight=count_bit_difference)
 
 
     if draw:  # draw an original graph with a network center
@@ -157,6 +183,12 @@ def reduce_graph(G, M, draw = True):
         for node in G.nodes(data=True): 
             labels[node[0]] = node[0]
         nx.draw_networkx_labels(G, pos, labels, font_size = 10)
+
+        edge_labels = nx.get_edge_attributes(G,'weight')
+        # formatted_labels = {}
+        # for label in labels:
+        #     formatted_labels[label]=  "weight: "+str(label[1])
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
 
     # realize a logic to reduce the network based on find MST
 
