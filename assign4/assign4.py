@@ -39,13 +39,13 @@ def generate_graph(N, M, D):
     nx.set_node_attributes(G, wrks, 'wrk')
     # for i in range(G.order()): print(G.nodes[i])
 
-    
+
     # Originally was going to create a list using map and pull out G nodes to map, however lambda can be argumentally used!
     #Relabeling: https://networkx.org/documentation/stable/reference/generated/networkx.relabel.relabel_nodes.html
     #Converting to binary: https://stackoverflow.com/questions/10411085/converting-integer-to-binary-in-python
     #mapping: https://www.geeksforgeeks.org/python-map-function/
-    nx.relabel_nodes(G, lambda x: f'{x:08b}', copy=False) 
-    
+    nx.relabel_nodes(G, lambda x: f'{x:08b}', copy=False)
+
     return G
 
 def find_center_node(G):
@@ -73,7 +73,7 @@ def set_node_colors(G):
     for node in (G.nodes(data=True)):
         role = node[1].get('wrk')
         if   role == 'd': colors.append('white')         # no data node
-        elif role == 'd-ctr': colors.append('yellow')    # graph center 
+        elif role == 'd-ctr': colors.append('yellow')    # graph center
         elif role == 's': colors.append('red')           # data node
         elif role == 's-ctr': colors.append('skyblue')   # subgraph center
         elif role == 'r-ctr': colors.append('blue')      # reduced graph center
@@ -102,45 +102,52 @@ def checkconnection(G,M):
 # Note in this assignment M only holds the number, however we must loop through all since the nodes are randomized.
 def reduce_graph(G, M, draw = True):
     ''' G will be reduced to M-node,data server only, graph '''
-    
+
 
     pos = nx.get_node_attributes(G, 'pos')
     empty_copy = nx.create_empty_copy(G)
     # print(empty_copy.nodes(data=True))
     G = empty_copy
 
-    # Go through the nodes and save only the M nodes. 
+    # Go through the nodes and save only the M nodes.
     m_nodes = {}
-    
+
     # Adding an integer as a key as easier to iterate when computing hamming distance
     index = 0
     for node in G.nodes(data=True):
         if node[1]['wrk'] == 's':
             m_nodes[index]=node
             index+=1
-    print(m_nodes)
+    # print(m_nodes)
 
     # ctr = find_center_node(G)[0]
     # G.nodes[ctr]['wrk'] = 'd-ctr'
 
     for i in range(len(m_nodes)):
-        # NOTE this for loop should be simplified to i > j 
-        for j in range(i+1, len(m_nodes)): 
-            count_bit_difference = 0 #NOTE Should ALWAYS be at least 1. 
+        # NOTE this for loop should be simplified to i > j
+        for j in range(i+1, len(m_nodes)):
+            count_bit_difference = 0 #NOTE Should ALWAYS be at least 1.
             # can covert this to its own function
             for bit_position in range(8):
                 #print(m_nodes[i][0][bit_position])
                 #print(m_nodes[j][0][bit_position])
                 if m_nodes[i][0][bit_position] != m_nodes[j][0][bit_position]:
                    count_bit_difference += 1
-            
+
             G.add_edge(m_nodes[i][0], m_nodes[j][0], weight=count_bit_difference)
 
+
+    # Removes white nodes. Need to do this so find_center_node() sees one connected component
+    copy = G.copy()
+    copy.remove_nodes_from(list(nx.isolates(copy)))
+    red_ctr = find_center_node(copy)[0]
+    print(red_ctr)
+    G.nodes[red_ctr]['wrk'] = 'r_ctr'
 
     if draw:  # draw an original graph with a network center
         plt1 = plt.figure(figsize=(15, 15))
         colors = set_node_colors(G)
-        
+
         # Check if node only occurs once in list of edges. If yes, remove edge
         node_count = len(G.nodes)
         edges = G.edges()
@@ -174,13 +181,12 @@ def reduce_graph(G, M, draw = True):
                 # if not checkconnection(G, M):
                 #     G.add_edge(elem, connection_counts[elem])
 
-        
         nx.draw_networkx_nodes(G, pos, node_size = 160,
                                node_color = colors, edgecolors = 'gray',
                                cmap = plt.cm.Reds_r)
         nx.draw_networkx_edges(G, pos, alpha = 0.2)
         labels = {}
-        for node in G.nodes(data=True): 
+        for node in G.nodes(data=True):
             labels[node[0]] = node[0]
         nx.draw_networkx_labels(G, pos, labels, font_size = 10)
 
@@ -190,21 +196,20 @@ def reduce_graph(G, M, draw = True):
         #     formatted_labels[label]=  "weight: "+str(label[1])
         nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
 
-    # realize a logic to reduce the network based on find MST
-
     if draw:
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
         # plt.axis('off')
         plt.show(block = False)
-    return G 
+
+    return G
 
 def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
-    parameter, a uniform [d_max, d_min] is a generated data size to exchange, 
-    d_M is the number of data generating servres, round_per_graph is the 
-    number of iterations per a generated graph, and drwa is to decide if the 
-    graph is gerated or not. ''' 
+    parameter, a uniform [d_max, d_min] is a generated data size to exchange,
+    d_M is the number of data generating servres, round_per_graph is the
+    number of iterations per a generated graph, and drwa is to decide if the
+    graph is gerated or not. '''
     print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
           "data =[" + str(d_min) + " ," + str(d_max) + "]",
           "Data Senders =", d_M, "Per Graph =", round_per_graph)
