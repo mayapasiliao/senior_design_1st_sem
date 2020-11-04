@@ -118,7 +118,7 @@ def reduce_graph(G, M, draw = True):
         if node[1]['wrk'] == 's':
             m_nodes[index]=node
             index+=1
-    print(m_nodes)
+    # print(m_nodes)
 
     # ctr = find_center_node(G)[0]
     # G.nodes[ctr]['wrk'] = 'd-ctr'
@@ -136,6 +136,15 @@ def reduce_graph(G, M, draw = True):
             
             G.add_edge(m_nodes[i][0], m_nodes[j][0], weight=count_bit_difference)
 
+    # Removes white nodes. Need to do this so find_center_node() sees one connected component
+    copy = G.copy()
+    copy.remove_nodes_from(list(nx.isolates(copy)))
+    red_ctr = find_center_node(copy)[0]
+    G.nodes[red_ctr]['wrk'] = 'r-ctr'
+    # G.remove_nodes_from(list(nx.isolates(G))) # remove white nodes
+
+
+    # G.nodes[int(red_ctr, 2)]['wrk'] = 'r_ctr'
 
     if draw:  # draw an original graph with a network center
         plt1 = plt.figure(figsize=(15, 15))
@@ -174,7 +183,7 @@ def reduce_graph(G, M, draw = True):
                 # if not checkconnection(G, M):
                 #     G.add_edge(elem, connection_counts[elem])
 
-        
+
         nx.draw_networkx_nodes(G, pos, node_size = 160,
                                node_color = colors, edgecolors = 'gray',
                                cmap = plt.cm.Reds_r)
@@ -197,6 +206,7 @@ def reduce_graph(G, M, draw = True):
         plt.ylim(-0.05, 1.05)
         # plt.axis('off')
         plt.show(block = False)
+    
     return G 
 
 def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
@@ -211,7 +221,6 @@ def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     # rnd.seed(999)
     G = generate_graph(N, M, D)
     G = reduce_graph(G, M, draw)
-    # rest is your work...
 
 simulation(200, 20, 0.125, 10, 100, 10, 10, True)
 plt.show()
