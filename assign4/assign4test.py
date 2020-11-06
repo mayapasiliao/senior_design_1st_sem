@@ -255,7 +255,7 @@ def closestMtoMdistance(G):
         if nodedict[x]<nodedict[lowest]:
             lowest = x
     return lowest
-
+   
 def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
     parameter, a uniform [d_max, d_min] is a generated data size to exchange, 
@@ -267,42 +267,40 @@ def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
     print("-- (N, M) = (" + str(N) + ", " + str(M) + ")", "D =", D,
           "data =[" + str(d_min) + " ," + str(d_max) + "]",
           "Data Senders =", d_M, "Per Graph =", round_per_graph)
-    answerlist = [[0 for i in range(6)] for j in range(10)]
+    answerlist = [0 for i in range(6)]
     G = generate_graph(N, M, D)
     G = reduce_graph(G, M, False)
     for i in range(10):
-        arr = list(range(M))
-        arr = rnd.sample(arr,int(d_M))
-        answerlist[i][5] = N
-        answerlist[i][4] = M
-        answerlist[i][0] = distancefromnodes(G,furthestfromMnodes(G))
-        answerlist[i][1] = randomMtoMdistance(G)
-        answerlist[i][2] = distancefromnodes(G,find_center_node(G)[0])
-        answerlist[i][3] = distancefromnodes(G,closestMtoMdistance(G))
+        answerlist[1] += randomMtoMdistance(G)
+    answerlist[0] = distancefromnodes(G,furthestfromMnodes(G))
+    answerlist[1] = answerlist[1]/10
+    answerlist[2] = distancefromnodes(G,find_center_node(G)[0])
+    answerlist[3] = distancefromnodes(G,closestMtoMdistance(G))
+    answerlist[5] = N
+    answerlist[4] = M
     return answerlist
-   
     
 def assignment():
     '''Runs the above iteration code 10 x 10 x 4 times of different variations. Answers returned are added to an array,
     which is then written to a csv as the answer.'''
-    answerlist = [[0 for col in range(10)] for row in range(40)]
+    answerlist = [0 for row in range(40)]
     for x in range(0,10):
-        M = rnd.randrange(1,11)*10
+        M = (x+1)*10
         answerlist[x]=iteration(200, M, 0.125, 10, 100, M, 10)
     for x in range(10,20):
-        M = rnd.randrange(1,11)*10
+        M = (x-9)*10
         answerlist[x]=iteration(200, M, 0.125, 10, 100, M/2, 10)
     for x in range(20,30):
-        M = rnd.randrange(1,6)*50
+        M = int((int((x%10)/2)+1)*50)
+        print(M)
         answerlist[x]=iteration(500, M, 0.125, 10, 100, M/4, 10)
     for x in range(30,40):
-        M = rnd.randrange(1,6)*40
+        M = (x-29)*20
         answerlist[x]=iteration(400, M, 0.125, 10, 100, M, 10)
-    with open('answerfile.csv', mode='w') as answer_file:
+    with open('assignmentfour.csv', mode='w') as answer_file:
         answerwriter = csv.writer(answer_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for j in range(len(answerlist)):
-            for k in range(len(answerlist[j])):
-                answerwriter.writerow(answerlist[j][k])
+            answerwriter.writerow(answerlist[j])
 
 def simulation(N, M, D, d_min, d_max, d_M, round_per_graph, draw = False):
     ''' N is a total number of node, M is a server node, D is a RGG's distance
