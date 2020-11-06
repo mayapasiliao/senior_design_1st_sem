@@ -213,7 +213,8 @@ def distancefromnodes(G,x):
     #Returns the sum of distances between node x and all nodes in the array arr.
     distance = 0
     for y in list(G):
-        distance+=nx.shortest_path_length(G,x,y)
+        if y != x:
+            distance+=G[x][y]['weight']
     return distance
     
 def furthestfromMnodes(G):
@@ -222,7 +223,8 @@ def furthestfromMnodes(G):
     for x in list(G):
         sum = 0
         for y in list(G):
-            sum +=nx.shortest_path_length(G,x,y)
+            if (y!=x):
+                sum +=G[x][y]['weight']
         nodedict[x] = sum
     highest = list(G)[0]
     for x in list(G):
@@ -236,7 +238,7 @@ def randomMtoMdistance(G):
     distance = 0
     for y in list(G):
         if y != sourcenode:
-            distance+=nx.shortest_path_length(G,sourcenode,y)
+            distance+=G[sourcenode][y]['weight']
     return distance
 
 def closestMtoMdistance(G):
@@ -245,7 +247,8 @@ def closestMtoMdistance(G):
     for x in list(G):
         sum = 0
         for y in list(G):
-            sum +=nx.shortest_path_length(G,x,y)
+            if (y!=x):
+                sum +=G[x][y]['weight']
         nodedict[x] = sum
     lowest = list(G)[0]
     for x in list(G):
@@ -275,8 +278,9 @@ def iteration(N, M, D, d_min, d_max, d_M, round_per_graph):
         answerlist[i][0] = distancefromnodes(G,furthestfromMnodes(G))
         answerlist[i][1] = randomMtoMdistance(G)
         answerlist[i][2] = distancefromnodes(G,find_center_node(G)[0])
-        answerlist[i][3] = closestMtoMdistance(G)
+        answerlist[i][3] = distancefromnodes(G,closestMtoMdistance(G))
     return answerlist
+   
     
 def assignment():
     '''Runs the above iteration code 10 x 10 x 4 times of different variations. Answers returned are added to an array,
