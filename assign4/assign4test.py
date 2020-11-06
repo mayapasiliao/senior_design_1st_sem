@@ -295,7 +295,7 @@ def assignment():
         print(M)
         answerlist[x]=iteration(500, M, 0.125, 10, 100, M/4, 10)
     for x in range(30,40):
-        M = (x-29)*20
+        M = int((int((x%10)/2)+1)*40)
         answerlist[x]=iteration(400, M, 0.125, 10, 100, M, 10)
     with open('assignmentfour.csv', mode='w') as answer_file:
         answerwriter = csv.writer(answer_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
