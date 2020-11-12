@@ -1,13 +1,13 @@
 from ryu.base import app_manager
-from ryu.ofproto import ofproto_v1_3
+from ryu.ofproto import ofproto_v1_3, ether
 from ryu.controller.handler import set_ev_cls
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
-from ryu.lib.packet import packet, ethernet
+from ryu.lib.packet import packet, ethernet, arp
 from ryu.app.ofctl.api import get_datapath
 from ryu.topology.api import get_switch, get_link
 from ryu.topology import event
-from ryu.lib import hub
+from ryu.lib import hub, mac
 
 class Switch(app_manager.RyuApp):
     OFP_VERSIONS =[ofproto_v1_3.OFP_VERSION]
@@ -18,14 +18,16 @@ class Switch(app_manager.RyuApp):
         super(Switch, self).__init__(*args, **kwargs)
         self.MAC_table = {}
         # for assignment 2
+        # ARP_table[IP] = MAC
         self.ARP_table = {}
         self.shortest_paths = {}
-        self.switches = []
+        self.switches = {}
 
     def remove_MAC(self, mac):
         for key in self.MAC_table:
             self.MAC_table.pop(mac)
-        
+
+
         
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
@@ -47,13 +49,27 @@ class Switch(app_manager.RyuApp):
         #Learn Src. MAC, avoid flood
         self.MAC_table[swid][smac] = pin
 
+        # 2.2: For arp
+        if (pkt.get_protocol(arp.arp)):
+            # arptable[ip] = mac
+            arp_pkt = pkt.get_protocol(arp.arp)
+            #if arp_pkt.dst_mac == dmac:
+            if arp_pkt.src_ip not in self.ARP_table:
+                #print('Adding dest mac to arp table...', arp_pkt.dst_ip, dmac, smac, pin, swid)
+                self.ARP_table[arp_pkt.src_ip] = smac
+
+
         # if dest MAC is already avail, figure out which port to output
         # otherwise flood, but dont flood?
         if dmac in self.MAC_table[swid]:
             port_out = self.MAC_table[swid][dmac]
         else:
-            port_out = ofp.OFPP_FLOOD
-
+            if self.arp_handler(msg):
+                return
+            else:
+                # disabling flooding?
+                port_out = ofp.OFPP_FLOOD
+            
         # prepare and send PACKET-OUT
         data = None
         if msg.buffer_id == ofp.OFP_NO_BUFFER:
@@ -64,8 +80,9 @@ class Switch(app_manager.RyuApp):
             datapath=dp, buffer_id=msg.buffer_id, 
             in_port=pin, actions=actions, 
             data=data)
-        
-        dp.send_msg(out)
+
+        if port_out != ofp.OFPP_FLOOD:
+            dp.send_msg(out)
 
         # 1.1: idle_timeout: 10s for our flowmod
         inst = [ofp_parser.OFPInstructionActions(
@@ -76,7 +93,77 @@ class Switch(app_manager.RyuApp):
         mod = ofp_parser.OFPFlowMod(datapath=dp, idle_timeout=10,
         priority=1,match=match,instructions=inst)
 
-        dp.send_msg(mod)
+        if port_out != ofp.OFPP_FLOOD:
+            dp.send_msg(mod)
+
+
+    def arp_handler(self, msg):
+        dp = msg.datapath
+        ofp = dp.ofproto
+        ofp_parser = dp.ofproto_parser
+        port_in = msg.match['in_port']
+        swid = dp.id
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocols(ethernet.ethernet)[0]
+        arp_pkt = pkt.get_protocol(arp.arp)
+        
+        if eth:
+            eth_dst = eth.dst
+            eth_src = eth.src
+
+        # avoid forward in network
+        if eth_dst == mac.BROADCAST_STR and arp_pkt:
+            arp_dst_ip = arp_pkt.dst_ip
+
+            if (dp.id, eth_src, arp_dst_ip) in self.switches:
+                if self.switches[(dp.id, eth_src, arp_dst_ip)] != port_in:
+                    dp.send_packet_out(in_port=port_in, actions=[])
+                    return True
+            else:
+                self.switches[(dp.id, eth_src, arp_dst_ip)] = port_in
+
+        if arp_pkt:
+            hwtype = arp_pkt.hwtype
+            proto = arp_pkt.proto
+            hlen = arp_pkt.hlen
+            plen = arp_pkt.plen
+            opcode = arp_pkt.opcode
+            arp_src_ip = arp_pkt.src_ip
+            arp_dst_ip = arp_pkt.dst_ip
+            if opcode == arp.ARP_REQUEST:
+                # print(arp_dst_ip, eth.dst)
+                # print(self.ARP_table)
+                if arp_dst_ip in self.ARP_table:
+                    ARP_Reply = packet.Packet()
+                    # print(eth_src, self.ARP_table[arp_dst_ip], arp_dst_ip, arp_src_ip)
+                    ARP_Reply.add_protocol(ethernet.ethernet(
+                        ethertype=ether.ETH_TYPE_ARP,
+                        dst=eth_src,
+                        src=self.ARP_table[arp_dst_ip]))
+                    ARP_Reply.add_protocol(arp.arp(
+                        hwtype=hwtype,
+                        proto=proto,
+                        hlen=hlen,
+                        plen=plen,
+                        opcode=arp.ARP_REPLY,
+                        src_mac=self.ARP_table[arp_dst_ip],
+                        src_ip=arp_dst_ip,
+                        dst_mac=eth_src,
+                        dst_ip=arp_src_ip))
+
+                    ARP_Reply.serialize()
+                    port_out = self.MAC_table[swid][eth_src]
+                    
+                    out = ofp_parser.OFPPacketOut(
+                        datapath=dp,
+                        buffer_id=0xffffffff,
+                        in_port=ofp.OFPP_CONTROLLER,
+                        actions=[ofp_parser.OFPActionOutput(port_out, 0)],
+                        data=ARP_Reply.data)
+                    dp.send_msg(out)
+                    return True
+                    
+        return False
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def install_table_miss_flow(self, ev):
