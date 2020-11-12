@@ -14,6 +14,7 @@ class Switch(app_manager.RyuApp):
         self.MAC_table = {}
         # for assignment 2
         self.ARP_table = {}
+        self.shortest_paths = {}
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
@@ -85,7 +86,7 @@ class Switch(app_manager.RyuApp):
         dp.send_msg(mod)
 
     # a simple get dict key by value function
-    def get_invalid_MAC(self, table, port):
+    def get_MAC(self, table, port):
         for key in table:
             if table[key] == port:
                 return key
@@ -99,18 +100,13 @@ class Switch(app_manager.RyuApp):
         ofp = dp.ofproto
         ofp_parser = dp.ofproto_parser
         swid = dp.id
-        # msg.reason, msg.desc?
-        # (c-f for OFPPortSTatus on docs; find example
-        # msg.desc => instance of OFPPort; has var "state"
-        # msg.desc.state:
-        # https://ryu.readthedocs.io/en/latest/ofproto_v1_3_ref.html?highlight=ofpport#ryu.ofproto.ofproto_v1_3_parser.OFPPort
-        # probably looking for OFPPS_LINK_DOWN?
         port = msg.desc
+
         print('Port state: {}'.format(port.state))
         
         if port.state == ofp.OFPPS_LINK_DOWN:
             # remove invalid entries here from MAC address table
-            bad_MAC = self.get_invalid_MAC(self.MAC_table[swid], port.port_no)
+            bad_MAC = self.get_MAC(self.MAC_table[swid], port.port_no)
             if bad_MAC != None:
                 self.MAC_table[swid].pop(bad_MAC)
                 print('Removed from MAC table: DEST MAC: {}'.format(bad_MAC))
@@ -121,7 +117,56 @@ class Switch(app_manager.RyuApp):
             match = ofp_parser.OFPMatch(eth_dst=bad_MAC)
             dp_list = get_datapath(self, None)
             for dp_item in dp_list:                
-                mod = ofp_parser.OFPFlowMod(datapath=dp, command=ofp.OFPFC_DELETE, out_port=ofp.OFPP_ANY,
+                mod = ofp_parser.OFPFlowMod(datapath=dp_item, command=ofp.OFPFC_DELETE, out_port=ofp.OFPP_ANY,
                                             out_group=ofp.OFPP_ANY, match=match)
                 print('Removed flow of datapath id: {}, match: dest MAC: {}'.format(dp_item.id, match['eth_dst']))
-                dp.send_msg(mod)
+                dp_item.send_msg(mod)
+                
+        # print('shortest path test: ', self.get_shortest_path(1,2))
+                
+    # 2.1 : Find best route between pair of OFS:
+    def get_shortest_path(self, swid1, swid2):
+        '''return the shortest path from swid1 to swid2. '''
+
+        # we will probably want to use dynamic programming and save the shortest path.
+        # note shortest_path of swid1 -> swid2 is the reverse of swid2 -> swid1
+
+        # get saved shortest path. current commented out due to issues with integer keys for dict
+        # if swid1 in self.shortest_paths and swid2 in self.shortest_paths[swid1]:
+            # return self.shortest_paths[swid1][swid2]
+
+        # apply BFS to determine shortest path
+        end_MAC = self.get_MAC(self.MAC_table[swid2], 1)
+        # queue contains all paths
+        queue = [[swid1]]
+        dp_list = get_datapath(self, None)
+        # list of available swids in the network
+        swids = [dp_item.id for dp_item in dp_list]
+        # a dict to translate MACs->swids
+        MACs = {}
+        for swid in swids:
+            MACs[self.get_MAC(self.MAC_table[swid], 1)] = swid
+        visited = []
+        while len(queue) > 0:
+            path = queue.pop(0)
+            swid = path[-1]
+            if swid not in visited:
+                neighbors = self.MAC_table[swid]
+                for neighbor in neighbors:
+                    # skip non-switch
+                    if neighbor not in MACs:
+                        continue
+                    neighbor_id = MACs[neighbor]
+                    new_path = list(path)
+                    new_path.append(neighbor_id)
+                    queue.append(new_path)
+                    if neighbor_id == swid2:
+                        # save shortest paths
+                        # some issue with int key for dict, remove cache thing for now
+                        # self.shortest_paths[swid1][swid2] = new_path
+                        # self.shortest_paths[swid2][swid1] = list(new_path).reverse()
+                        return new_path
+                visited.append(swid)
+        print('MAC table: ', self.MAC_table)
+        print ('Unable to find path from swid {} to swid {}'.format(swid1, swid2))
+        
